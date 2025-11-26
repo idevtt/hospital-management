@@ -1,18 +1,57 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Calendar, Users, Activity, Heart, Clock, Phone, Mail, MapPin, Menu, X, ChevronRight, Star, Award, Shield, Stethoscope, Pill, Brain, Eye, CheckCircle, XCircle, Info, Sparkles } from 'lucide-react';
+import {
+  Calendar,
+  Users,
+  Activity,
+  Heart,
+  Clock,
+  Phone,
+  Mail,
+  MapPin,
+  Menu,
+  X,
+  ChevronRight,
+  Star,
+  Award,
+  Shield,
+  Stethoscope,
+  Pill,
+  Brain,
+  Eye,
+  CheckCircle,
+  XCircle,
+  Info,
+  Sparkles,
+} from 'lucide-react';
 
 const HospitalManagementSystem = () => {
   const [currentPage, setCurrentPage] = useState('home');
   const [menuOpen, setMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [stats, setStats] = useState({ patients: 0, doctors: 0, staff: 0, departments: 0 });
-  const [formData, setFormData] = useState({ name: '', email: '', dept: '', date: '', time: '' });
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    mobile: '',
+    dept: '',
+    doctor: '',
+    date: '',
+    time: '',
+  });
+  const [currentSlide, setCurrentSlide] = useState(0);
+  const [showDoctorSelection, setShowDoctorSelection] = useState(false);
+  const [filteredDoctors, setFilteredDoctors] = useState([]);
   const [showSuccess, setShowSuccess] = useState(false);
   const [selectedDept, setSelectedDept] = useState(null);
   const [selectedDoctor, setSelectedDoctor] = useState(null);
   const [hoveredCard, setHoveredCard] = useState(null);
   const [formErrors, setFormErrors] = useState({});
-  const [contactForm, setContactForm] = useState({ name: '', email: '', subject: '', message: '' });
+  const [contactForm, setContactForm] = useState({
+    name: '',
+    email: '',
+    subject: '',
+    message: '',
+  });
   const [contactSuccess, setContactSuccess] = useState(false);
   const [ripples, setRipples] = useState([]);
   const [expandedDept, setExpandedDept] = useState(null);
@@ -39,7 +78,7 @@ const HospitalManagementSystem = () => {
           patients: Math.floor(targets.patients * progress),
           doctors: Math.floor(targets.doctors * progress),
           staff: Math.floor(targets.staff * progress),
-          departments: Math.floor(targets.departments * progress)
+          departments: Math.floor(targets.departments * progress),
         });
 
         if (step >= steps) clearInterval(timer);
@@ -55,16 +94,27 @@ const HospitalManagementSystem = () => {
     }
   }, [currentPage]);
 
+  // Auto-rotate slideshow
+  useEffect(() => {
+    if (currentPage === 'home') {
+      const interval = setInterval(() => {
+        setCurrentSlide((prev) => (prev + 1) % 3);
+      }, 5000);
+      return () => clearInterval(interval);
+    }
+  }, [currentPage]);
+
   const createRipple = (e) => {
+    if (!e) return;
     const button = e.currentTarget;
     const rect = button.getBoundingClientRect();
     const size = Math.max(rect.width, rect.height);
     const x = e.clientX - rect.left - size / 2;
     const y = e.clientY - rect.top - size / 2;
-    
+
     const ripple = { x, y, size, id: Date.now() };
-    setRipples(prev => [...prev, ripple]);
-    setTimeout(() => setRipples(prev => prev.filter(r => r.id !== ripple.id)), 600);
+    setRipples((prev) => [...prev, ripple]);
+    setTimeout(() => setRipples((prev) => prev.filter((r) => r.id !== ripple.id)), 600);
   };
 
   const validateForm = () => {
@@ -72,7 +122,11 @@ const HospitalManagementSystem = () => {
     if (!formData.name.trim()) errors.name = 'Name is required';
     if (!formData.email.trim()) errors.email = 'Email is required';
     else if (!/\S+@\S+\.\S+/.test(formData.email)) errors.email = 'Email is invalid';
+    if (!formData.mobile.trim()) errors.mobile = 'Mobile number is required';
+    else if (!/^[0-9]{10}$/.test(formData.mobile.replace(/[\s-]/g, '')))
+      errors.mobile = 'Mobile number must be 10 digits';
     if (!formData.dept) errors.dept = 'Department is required';
+    if (!formData.doctor) errors.doctor = 'Doctor selection is required';
     if (!formData.date) errors.date = 'Date is required';
     if (!formData.time) errors.time = 'Time is required';
     setFormErrors(errors);
@@ -90,85 +144,127 @@ const HospitalManagementSystem = () => {
   };
 
   const departments = [
-    { 
-      name: 'Cardiology', 
-      icon: Heart, 
-      color: 'from-red-500 to-pink-500', 
+    {
+      name: 'Cardiology',
+      icon: Heart,
+      color: 'from-red-500 to-pink-500',
       patients: 450,
       description: 'Comprehensive heart care with advanced cardiac procedures and diagnostics.',
       doctors: 12,
-      equipment: 'ECG, Echocardiography, Cardiac Catheterization Lab'
+      equipment: 'ECG, Echocardiography, Cardiac Catheterization Lab',
     },
-    { 
-      name: 'Neurology', 
-      icon: Brain, 
-      color: 'from-purple-500 to-indigo-500', 
+    {
+      name: 'Neurology',
+      icon: Brain,
+      color: 'from-purple-500 to-indigo-500',
       patients: 380,
       description: 'Expert neurological care for brain and nervous system disorders.',
       doctors: 8,
-      equipment: 'MRI, CT Scan, EEG, EMG'
+      equipment: 'MRI, CT Scan, EEG, EMG',
     },
-    { 
-      name: 'Orthopedics', 
-      icon: Activity, 
-      color: 'from-blue-500 to-cyan-500', 
+    {
+      name: 'Orthopedics',
+      icon: Activity,
+      color: 'from-blue-500 to-cyan-500',
       patients: 520,
       description: 'Specialized treatment for bone, joint, and muscle conditions.',
       doctors: 15,
-      equipment: 'X-Ray, Bone Densitometry, Arthroscopy'
+      equipment: 'X-Ray, Bone Densitometry, Arthroscopy',
     },
-    { 
-      name: 'Pediatrics', 
-      icon: Users, 
-      color: 'from-green-500 to-emerald-500', 
+    {
+      name: 'Pediatrics',
+      icon: Users,
+      color: 'from-green-500 to-emerald-500',
       patients: 620,
       description: 'Compassionate care for children from infancy through adolescence.',
       doctors: 18,
-      equipment: 'Pediatric ICU, Neonatal Care Unit'
+      equipment: 'Pediatric ICU, Neonatal Care Unit',
     },
-    { 
-      name: 'Ophthalmology', 
-      icon: Eye, 
-      color: 'from-yellow-500 to-orange-500', 
+    {
+      name: 'Ophthalmology',
+      icon: Eye,
+      color: 'from-yellow-500 to-orange-500',
       patients: 340,
       description: 'Advanced eye care and vision correction services.',
       doctors: 6,
-      equipment: 'Slit Lamp, Fundus Camera, Laser Surgery Unit'
+      equipment: 'Slit Lamp, Fundus Camera, Laser Surgery Unit',
     },
-    { 
-      name: 'Pharmacy', 
-      icon: Pill, 
-      color: 'from-teal-500 to-cyan-500', 
+    {
+      name: 'Pharmacy',
+      icon: Pill,
+      color: 'from-teal-500 to-cyan-500',
       patients: 780,
       description: '24/7 pharmacy services with prescription and OTC medications.',
       doctors: 4,
-      equipment: 'Automated Dispensing System'
-    }
+      equipment: 'Automated Dispensing System',
+    },
   ];
 
   const doctors = [
-    { name: 'Dr. Anubhav Shrivastav', specialty: 'Chief Cardiologist', experience: '15 years', rating: 4.9, image: '👩‍⚕️' },
-    { name: 'Dr. Yogesh Kumar', specialty: 'Neurologist', experience: '12 years', rating: 4.8, image: '👨‍⚕️' },
-    { name: 'Dr. Emily Rodriguez', specialty: 'Pediatric Specialist', experience: '10 years', rating: 4.9, image: '👩‍⚕️' },
-    { name: 'Dr. Michael Kumar', specialty: 'Orthopedic Surgeon', experience: '18 years', rating: 5.0, image: '👨‍⚕️' }
+    {
+      name: 'Dr. Anubhav Shrivastav',
+      specialty: 'Chief Cardiologist',
+      experience: '15 years',
+      rating: 4.9,
+      image: '👩‍⚕️',
+    },
+    {
+      name: 'Dr. Yogesh Kumar',
+      specialty: 'Neurologist',
+      experience: '12 years',
+      rating: 4.8,
+      image: '👨‍⚕️',
+    },
+    {
+      name: 'Dr. Emily Rodriguez',
+      specialty: 'Pediatric Specialist',
+      experience: '10 years',
+      rating: 4.9,
+      image: '👩‍⚕️',
+    },
+    {
+      name: 'Dr. Michael Kumar',
+      specialty: 'Orthopedic Surgeon',
+      experience: '18 years',
+      rating: 5.0,
+      image: '👨‍⚕️',
+    },
   ];
 
   const appointments = [
     { id: 'APT001', patient: 'dev tyagi', doctor: 'Dr. Anubhav Shrivastav', time: '09:00 AM', status: 'Confirmed' },
     { id: 'APT002', patient: 'Emma Johnson', doctor: 'Dr. Yogesh Kumar', time: '10:30 AM', status: 'Pending' },
     { id: 'APT003', patient: 'Michael Brown', doctor: 'Dr. Emily Rodriguez', time: '02:00 PM', status: 'Confirmed' },
-    { id: 'APT004', patient: 'Sarah Davis', doctor: 'Dr. Michael Kumar', time: '03:30 PM', status: 'Completed' }
+    { id: 'APT004', patient: 'Sarah Davis', doctor: 'Dr. Michael Kumar', time: '03:30 PM', status: 'Completed' },
   ];
 
+  useEffect(() => {
+    if (formData.dept) {
+      const deptDoctors = doctors.filter(
+        (doc) =>
+          doc.specialty.toLowerCase().includes(formData.dept.toLowerCase()) ||
+          formData.dept.toLowerCase().includes(doc.specialty.toLowerCase().split(' ')[0])
+      );
+      setFilteredDoctors(deptDoctors.length > 0 ? deptDoctors : doctors);
+      setShowDoctorSelection(true);
+      if (!deptDoctors.some((d) => d.name === formData.doctor)) {
+        setFormData((prev) => ({ ...prev, doctor: '' }));
+      }
+    } else {
+      setFilteredDoctors(doctors);
+      setShowDoctorSelection(false);
+    }
+  }, [formData.dept, formData.doctor]);
+
   const handleInputChange = (field, value) => {
-    setFormData({ ...formData, [field]: value });
+    setFormData((prev) => ({ ...prev, [field]: value }));
     if (formErrors[field]) {
-      setFormErrors({ ...formErrors, [field]: '' });
+      setFormErrors((prev) => ({ ...prev, [field]: '' }));
     }
   };
 
   const handleContactChange = (field, value) => {
-    setContactForm({ ...contactForm, [field]: value });
+    setContactForm((prev) => ({ ...prev, [field]: value }));
   };
 
   const handleBookAppointment = (e) => {
@@ -176,8 +272,9 @@ const HospitalManagementSystem = () => {
     if (validateForm()) {
       setShowSuccess(true);
       setTimeout(() => setShowSuccess(false), 3000);
-      setFormData({ name: '', email: '', dept: '', date: '', time: '' });
+      setFormData({ name: '', email: '', mobile: '', dept: '', doctor: '', date: '', time: '' });
       setFormErrors({});
+      setShowDoctorSelection(false);
     }
   };
 
@@ -190,49 +287,188 @@ const HospitalManagementSystem = () => {
     }
   };
 
+  const slideshowItems = [
+    {
+      title: 'Advanced Medical Technology',
+      subtitle: 'State-of-the-art equipment for accurate diagnosis',
+      gradient: 'from-blue-600 via-purple-600 to-pink-600',
+      icon: Activity,
+    },
+    {
+      title: 'Expert Medical Professionals',
+      subtitle: 'Experienced doctors dedicated to your health',
+      gradient: 'from-green-600 via-teal-600 to-cyan-600',
+      icon: Stethoscope,
+    },
+    {
+      title: '24/7 Emergency Care',
+      subtitle: 'Round-the-clock healthcare services',
+      gradient: 'from-red-600 via-orange-600 to-yellow-600',
+      icon: Heart,
+    },
+  ];
+
   const renderHome = () => (
     <div className="min-h-screen" ref={pageRef}>
-      <div className="relative h-screen flex items-center justify-center overflow-hidden bg-gradient-to-br from-blue-600 via-purple-600 to-pink-500">
-        <div className="absolute inset-0 bg-black opacity-30"></div>
+      {/* Interactive Slideshow */}
+      <div className="relative h-screen overflow-hidden">
+        {slideshowItems.map((slide, idx) => (
+          <div
+            key={idx}
+            className={`absolute inset-0 bg-gradient-to-br ${slide.gradient} animate-gradient transition-opacity duration-1000 ${
+              currentSlide === idx ? 'opacity-100 z-10' : 'opacity-0 z-0'
+            }`}
+          >
+            <div className="absolute inset-0 bg-black opacity-20"></div>
+            <div className="absolute inset-0">
+              {[...Array(30)].map((_, i) => (
+                <div
+                  key={i}
+                  className="absolute rounded-full animate-float"
+                  style={{
+                    width: Math.random() * 80 + 30 + 'px',
+                    height: Math.random() * 80 + 30 + 'px',
+                    top: Math.random() * 100 + '%',
+                    left: Math.random() * 100 + '%',
+                    animationDelay: Math.random() * 6 + 's',
+                    animationDuration: Math.random() * 4 + 4 + 's',
+                    background: `linear-gradient(135deg, 
+                      rgba(${Math.random() * 255}, ${Math.random() * 255}, ${Math.random() * 255}, 0.3),
+                      rgba(${Math.random() * 255}, ${Math.random() * 255}, ${Math.random() * 255}, 0.1)
+                    )`,
+                    boxShadow: `0 0 ${Math.random() * 50 + 20}px rgba(${Math.random() * 255}, ${
+                      Math.random() * 255
+                    }, ${Math.random() * 255}, 0.5)`,
+                  }}
+                ></div>
+              ))}
+            </div>
+
+            <div
+              className={`relative z-10 h-full flex items-center justify-center text-center text-white px-4 transition-all duration-1000 ${
+                currentSlide === idx ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'
+              }`}
+            >
+              <div>
+                <div className="mb-6 inline-block animate-bounce">
+                  <slide.icon className="w-24 h-24" />
+                </div>
+                <h1 className="text-6xl md:text-7xl font-bold mb-6 animate-slide-up">{slide.title}</h1>
+                <p
+                  className="text-2xl md:text-3xl mb-8 animate-slide-up"
+                  style={{ animationDelay: '0.2s' }}
+                >
+                  {slide.subtitle}
+                </p>
+                <button
+                  onClick={(e) => {
+                    createRipple(e);
+                    setCurrentPage('appointments');
+                  }}
+                  className="relative overflow-hidden bg-gradient-to-r from-pink-500 via-purple-500 to-indigo-500 text-white px-8 py-4 rounded-full text-xl font-semibold hover:scale-110 transform transition duration-300 shadow-2xl animate-slide-up group animate-pulse-glow"
+                  style={{ animationDelay: '0.4s' }}
+                >
+                  <span className="relative z-10 flex items-center">
+                    Book Appointment{' '}
+                    <ChevronRight className="inline ml-2 group-hover:translate-x-1 transition-transform" />
+                  </span>
+                  {ripples.map((ripple) => (
+                    <span
+                      key={ripple.id}
+                      className="absolute rounded-full bg-purple-200 opacity-50 animate-ripple"
+                      style={{
+                        left: ripple.x + 'px',
+                        top: ripple.y + 'px',
+                        width: ripple.size + 'px',
+                        height: ripple.size + 'px',
+                      }}
+                    />
+                  ))}
+                </button>
+              </div>
+            </div>
+          </div>
+        ))}
+
+        {/* Slideshow Navigation Dots */}
+        <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 z-20 flex space-x-3">
+          {slideshowItems.map((_, idx) => (
+            <button
+              key={idx}
+              onClick={() => setCurrentSlide(idx)}
+              className={`w-3 h-3 rounded-full transition-all duration-300 ${
+                currentSlide === idx ? 'bg-white w-8 scale-125' : 'bg-white bg-opacity-50 hover:bg-opacity-75'
+              }`}
+            />
+          ))}
+        </div>
+
+        {/* Navigation Arrows */}
+        <button
+          onClick={() => setCurrentSlide((prev) => (prev - 1 + slideshowItems.length) % slideshowItems.length)}
+          className="absolute left-4 top-1/2 transform -translate-y-1/2 z-20 bg-white bg-opacity-20 hover:bg-opacity-40 text-white p-3 rounded-full transition-all duration-300 hover:scale-110"
+        >
+          <ChevronRight className="w-6 h-6 rotate-180" />
+        </button>
+        <button
+          onClick={() => setCurrentSlide((prev) => (prev + 1) % slideshowItems.length)}
+          className="absolute right-4 top-1/2 transform -translate-y-1/2 z-20 bg-white bg-opacity-20 hover:bg-opacity-40 text-white p-3 rounded-full transition-all duration-300 hover:scale-110"
+        >
+          <ChevronRight className="w-6 h-6" />
+        </button>
+      </div>
+
+      {/* Old hero section - hidden */}
+      <div className="relative h-screen flex items-center justify-center overflow-hidden bg-gradient-to-br from-indigo-600 via-purple-600 via-pink-500 to-orange-500 animate-gradient hidden">
+        <div className="absolute inset-0 bg-black opacity-20"></div>
         <div className="absolute inset-0">
-          {[...Array(20)].map((_, i) => (
+          {[...Array(30)].map((_, i) => (
             <div
               key={i}
-              className="absolute bg-white rounded-full opacity-20 animate-pulse"
+              className="absolute rounded-full animate-float"
               style={{
-                width: Math.random() * 100 + 50 + 'px',
-                height: Math.random() * 100 + 50 + 'px',
+                width: Math.random() * 80 + 30 + 'px',
+                height: Math.random() * 80 + 30 + 'px',
                 top: Math.random() * 100 + '%',
                 left: Math.random() * 100 + '%',
-                animationDelay: Math.random() * 2 + 's',
-                animationDuration: Math.random() * 3 + 2 + 's'
+                animationDelay: Math.random() * 6 + 's',
+                animationDuration: Math.random() * 4 + 4 + 's',
+                background: `linear-gradient(135deg, 
+                  rgba(${Math.random() * 255}, ${Math.random() * 255}, ${Math.random() * 255}, 0.3),
+                  rgba(${Math.random() * 255}, ${Math.random() * 255}, ${Math.random() * 255}, 0.1)
+                )`,
+                boxShadow: `0 0 ${Math.random() * 50 + 20}px rgba(${Math.random() * 255}, ${
+                  Math.random() * 255
+                }, ${Math.random() * 255}, 0.5)`,
               }}
             ></div>
           ))}
         </div>
-        
+
         <div className="relative z-10 text-center text-white px-4 animate-fade-in">
           <div className="mb-6 inline-block">
             <Heart className="w-24 h-24 animate-bounce" />
           </div>
-          <h1 className="text-6xl md:text-7xl font-bold mb-6 animate-slide-up">
-            MediCare Plus Hospital
-          </h1>
-          <p className="text-2xl md:text-3xl mb-8 animate-slide-up" style={{ animationDelay: '0.2s' }}>
+          <h1 className="text-6xl md:text-7xl font-bold mb-6 animate-slide-up">MediCare Plus Hospital</h1>
+          <p
+            className="text-2xl md:text-3xl mb-8 animate-slide-up"
+            style={{ animationDelay: '0.2s' }}
+          >
             Advanced Healthcare Management System
           </p>
-          <button 
+          <button
             onClick={(e) => {
               createRipple(e);
               setCurrentPage('appointments');
             }}
-            className="relative overflow-hidden bg-white text-purple-600 px-8 py-4 rounded-full text-xl font-semibold hover:scale-110 transform transition duration-300 shadow-2xl animate-slide-up group"
+            className="relative overflow-hidden bg-gradient-to-r from-pink-500 via-purple-500 to-indigo-500 text-white px-8 py-4 rounded-full text-xl font-semibold hover:scale-110 transform transition duration-300 shadow-2xl animate-slide-up group animate-pulse-glow"
             style={{ animationDelay: '0.4s' }}
           >
             <span className="relative z-10 flex items-center">
-              Book Appointment <ChevronRight className="inline ml-2 group-hover:translate-x-1 transition-transform" />
+              Book Appointment{' '}
+              <ChevronRight className="inline ml-2 group-hover:translate-x-1 transition-transform" />
             </span>
-            {ripples.map(ripple => (
+            {ripples.map((ripple) => (
               <span
                 key={ripple.id}
                 className="absolute rounded-full bg-purple-200 opacity-50 animate-ripple"
@@ -248,46 +484,104 @@ const HospitalManagementSystem = () => {
         </div>
       </div>
 
-      <div className="py-20 bg-gradient-to-r from-gray-900 to-gray-800 text-white">
+      {/* Stats section */}
+      <div className="py-20 bg-gradient-to-r from-indigo-900 via-purple-900 via-pink-900 to-rose-900 text-white relative overflow-hidden">
+        <div className="absolute inset-0 opacity-20">
+          {[...Array(15)].map((_, i) => (
+            <div
+              key={i}
+              className="absolute rounded-full animate-float"
+              style={{
+                width: Math.random() * 60 + 20 + 'px',
+                height: Math.random() * 60 + 20 + 'px',
+                top: Math.random() * 100 + '%',
+                left: Math.random() * 100 + '%',
+                animationDelay: Math.random() * 5 + 's',
+                background: `radial-gradient(circle, rgba(255,255,255,0.3), transparent)`,
+              }}
+            ></div>
+          ))}
+        </div>
         <div className="max-w-7xl mx-auto px-4">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
-            <div 
+            <div
               className="text-center transform hover:scale-110 transition-all duration-300 cursor-pointer group bg-white bg-opacity-5 rounded-2xl p-6 hover:bg-opacity-10"
               onMouseEnter={() => setHoveredCard('stat-patients')}
             >
-              <Users className={`w-12 h-12 mx-auto mb-4 text-blue-400 transition-transform duration-300 ${hoveredCard === 'stat-patients' ? 'scale-125 rotate-12' : ''}`} />
-              <div className="text-5xl font-bold mb-2 group-hover:text-blue-400 transition-colors">{stats.patients.toLocaleString()}</div>
+              <Users
+                className={`w-12 h-12 mx-auto mb-4 text-blue-400 transition-transform duration-300 ${
+                  hoveredCard === 'stat-patients' ? 'scale-125 rotate-12' : ''
+                }`}
+              />
+              <div className="text-5xl font-bold mb-2 group-hover:text-blue-400 transition-colors">
+                {stats.patients.toLocaleString()}
+              </div>
               <div className="text-gray-400 group-hover:text-white transition-colors">Patients Treated</div>
             </div>
-            <div 
+            <div
               className="text-center transform hover:scale-110 transition-all duration-300 cursor-pointer group bg-white bg-opacity-5 rounded-2xl p-6 hover:bg-opacity-10"
               onMouseEnter={() => setHoveredCard('stat-doctors')}
             >
-              <Stethoscope className={`w-12 h-12 mx-auto mb-4 text-green-400 transition-transform duration-300 ${hoveredCard === 'stat-doctors' ? 'scale-125 rotate-12' : ''}`} />
-              <div className="text-5xl font-bold mb-2 group-hover:text-green-400 transition-colors">{stats.doctors}</div>
+              <Stethoscope
+                className={`w-12 h-12 mx-auto mb-4 text-green-400 transition-transform duration-300 ${
+                  hoveredCard === 'stat-doctors' ? 'scale-125 rotate-12' : ''
+                }`}
+              />
+              <div className="text-5xl font-bold mb-2 group-hover:text-green-400 transition-colors">
+                {stats.doctors}
+              </div>
               <div className="text-gray-400 group-hover:text-white transition-colors">Expert Doctors</div>
             </div>
-            <div 
+            <div
               className="text-center transform hover:scale-110 transition-all duration-300 cursor-pointer group bg-white bg-opacity-5 rounded-2xl p-6 hover:bg-opacity-10"
               onMouseEnter={() => setHoveredCard('stat-staff')}
             >
-              <Activity className={`w-12 h-12 mx-auto mb-4 text-purple-400 transition-transform duration-300 ${hoveredCard === 'stat-staff' ? 'scale-125 rotate-12' : ''}`} />
-              <div className="text-5xl font-bold mb-2 group-hover:text-purple-400 transition-colors">{stats.staff}</div>
+              <Activity
+                className={`w-12 h-12 mx-auto mb-4 text-purple-400 transition-transform duration-300 ${
+                  hoveredCard === 'stat-staff' ? 'scale-125 rotate-12' : ''
+                }`}
+              />
+              <div className="text-5xl font-bold mb-2 group-hover:text-purple-400 transition-colors">
+                {stats.staff}
+              </div>
               <div className="text-gray-400 group-hover:text-white transition-colors">Staff Members</div>
             </div>
-            <div 
+            <div
               className="text-center transform hover:scale-110 transition-all duration-300 cursor-pointer group bg-white bg-opacity-5 rounded-2xl p-6 hover:bg-opacity-10"
               onMouseEnter={() => setHoveredCard('stat-depts')}
             >
-              <Award className={`w-12 h-12 mx-auto mb-4 text-yellow-400 transition-transform duration-300 ${hoveredCard === 'stat-depts' ? 'scale-125 rotate-12' : ''}`} />
-              <div className="text-5xl font-bold mb-2 group-hover:text-yellow-400 transition-colors">{stats.departments}</div>
+              <Award
+                className={`w-12 h-12 mx-auto mb-4 text-yellow-400 transition-transform duration-300 ${
+                  hoveredCard === 'stat-depts' ? 'scale-125 rotate-12' : ''
+                }`}
+              />
+              <div className="text-5xl font-bold mb-2 group-hover:text-yellow-400 transition-colors">
+                {stats.departments}
+              </div>
               <div className="text-gray-400 group-hover:text-white transition-colors">Departments</div>
             </div>
           </div>
         </div>
       </div>
 
-      <div className="py-20 bg-gray-50">
+      {/* Departments */}
+      <div className="py-20 bg-gradient-to-br from-blue-50 via-purple-50 via-pink-50 to-rose-50 relative overflow-hidden">
+        <div className="absolute inset-0 opacity-10">
+          {[...Array(10)].map((_, i) => (
+            <div
+              key={i}
+              className="absolute rounded-full animate-float"
+              style={{
+                width: Math.random() * 100 + 50 + 'px',
+                height: Math.random() * 100 + 50 + 'px',
+                top: Math.random() * 100 + '%',
+                left: Math.random() * 100 + '%',
+                animationDelay: Math.random() * 4 + 's',
+                background: `linear-gradient(135deg, rgba(147, 51, 234, 0.2), rgba(219, 39, 119, 0.2))`,
+              }}
+            ></div>
+          ))}
+        </div>
         <div className="max-w-7xl mx-auto px-4">
           <h2 className="text-5xl font-bold text-center mb-16 text-gray-800">Our Departments</h2>
           <div className="grid md:grid-cols-3 gap-8">
@@ -297,14 +591,20 @@ const HospitalManagementSystem = () => {
                 onMouseEnter={() => setHoveredCard(idx)}
                 onMouseLeave={() => setHoveredCard(null)}
                 onClick={() => setSelectedDept(dept)}
-                className="bg-white rounded-2xl shadow-xl overflow-hidden transform hover:scale-105 hover:shadow-2xl transition-all duration-300 cursor-pointer group relative"
+                className="bg-gradient-to-br from-white to-purple-50 rounded-2xl shadow-xl overflow-hidden transform hover:scale-105 hover:shadow-2xl transition-all duration-300 cursor-pointer group relative border-2 border-transparent hover:border-purple-300"
               >
                 <div className={`h-48 bg-gradient-to-br ${dept.color} flex items-center justify-center relative overflow-hidden`}>
-                  <dept.icon className={`w-24 h-24 text-white transition-transform duration-300 ${hoveredCard === idx ? 'scale-125 rotate-12' : ''}`} />
+                  <dept.icon
+                    className={`w-24 h-24 text-white transition-transform duration-300 ${
+                      hoveredCard === idx ? 'scale-125 rotate-12' : ''
+                    }`}
+                  />
                   <div className="absolute inset-0 bg-white opacity-0 group-hover:opacity-10 transition-opacity duration-300"></div>
                 </div>
                 <div className="p-6">
-                  <h3 className="text-2xl font-bold mb-2 group-hover:text-purple-600 transition-colors">{dept.name}</h3>
+                  <h3 className="text-2xl font-bold mb-2 group-hover:text-purple-600 transition-colors">
+                    {dept.name}
+                  </h3>
                   <p className="text-gray-600 mb-2">{dept.patients} patients this month</p>
                   {expandedDept === idx && (
                     <div className="mt-4 p-4 bg-purple-50 rounded-lg animate-slide-up">
@@ -315,15 +615,19 @@ const HospitalManagementSystem = () => {
                       </div>
                     </div>
                   )}
-                  <button 
+                  <button
                     onClick={(e) => {
                       e.stopPropagation();
                       setExpandedDept(expandedDept === idx ? null : idx);
                     }}
                     className="mt-4 text-purple-600 font-semibold hover:text-purple-800 flex items-center group/btn"
                   >
-                    {expandedDept === idx ? 'Show Less' : 'Learn More'} 
-                    <ChevronRight className={`inline w-4 h-4 ml-1 transition-transform ${expandedDept === idx ? 'rotate-90' : 'group-hover/btn:translate-x-1'}`} />
+                    {expandedDept === idx ? 'Show Less' : 'Learn More'}
+                    <ChevronRight
+                      className={`inline w-4 h-4 ml-1 transition-transform ${
+                        expandedDept === idx ? 'rotate-90' : 'group-hover/btn:translate-x-1'
+                      }`}
+                    />
                   </button>
                 </div>
               </div>
@@ -332,33 +636,74 @@ const HospitalManagementSystem = () => {
         </div>
       </div>
 
-      <div className="py-20 bg-gradient-to-br from-purple-600 to-blue-600 text-white">
+      {/* Why choose us */}
+      <div className="py-20 bg-gradient-to-br from-violet-600 via-purple-600 via-pink-600 via-rose-600 to-orange-500 text-white relative overflow-hidden animate-gradient">
+        <div className="absolute inset-0 opacity-20">
+          {[...Array(20)].map((_, i) => (
+            <div
+              key={i}
+              className="absolute rounded-full animate-float"
+              style={{
+                width: Math.random() * 80 + 40 + 'px',
+                height: Math.random() * 80 + 40 + 'px',
+                top: Math.random() * 100 + '%',
+                left: Math.random() * 100 + '%',
+                animationDelay: Math.random() * 6 + 's',
+                background: `radial-gradient(circle, rgba(255,255,255,0.4), transparent)`,
+              }}
+            ></div>
+          ))}
+        </div>
         <div className="max-w-7xl mx-auto px-4">
           <h2 className="text-5xl font-bold text-center mb-16 animate-slide-up">Why Choose Us</h2>
           <div className="grid md:grid-cols-3 gap-8">
-            <div 
-              className="text-center p-8 bg-white bg-opacity-10 rounded-2xl backdrop-blur-lg transform hover:scale-110 hover:bg-opacity-20 transition-all duration-300 cursor-pointer group"
+            <div
+              className="text-center p-8 bg-gradient-to-br from-yellow-500/20 to-orange-500/20 rounded-2xl backdrop-blur-lg transform hover:scale-110 hover:from-yellow-500/30 hover:to-orange-500/30 transition-all duration-300 cursor-pointer group border-2 border-yellow-400/30 hover:border-yellow-400/60"
               onMouseEnter={() => setHoveredCard('why-1')}
             >
-              <Shield className={`w-16 h-16 mx-auto mb-4 transition-transform duration-300 ${hoveredCard === 'why-1' ? 'scale-125 rotate-12' : ''}`} />
-              <h3 className="text-2xl font-bold mb-4 group-hover:text-yellow-300 transition-colors">24/7 Emergency Care</h3>
-              <p className="group-hover:text-white transition-colors">Round-the-clock emergency services with expert medical staff</p>
+              <Shield
+                className={`w-16 h-16 mx-auto mb-4 transition-transform duration-300 text-yellow-300 ${
+                  hoveredCard === 'why-1' ? 'scale-125 rotate-12' : ''
+                }`}
+              />
+              <h3 className="text-2xl font-bold mb-4 group-hover:text-yellow-300 transition-colors">
+                24/7 Emergency Care
+              </h3>
+              <p className="group-hover:text-white transition-colors">
+                Round-the-clock emergency services with expert medical staff
+              </p>
             </div>
-            <div 
-              className="text-center p-8 bg-white bg-opacity-10 rounded-2xl backdrop-blur-lg transform hover:scale-110 hover:bg-opacity-20 transition-all duration-300 cursor-pointer group"
+            <div
+              className="text-center p-8 bg-gradient-to-br from-pink-500/20 to-rose-500/20 rounded-2xl backdrop-blur-lg transform hover:scale-110 hover:from-pink-500/30 hover:to-rose-500/30 transition-all duration-300 cursor-pointer group border-2 border-pink-400/30 hover:border-pink-400/60"
               onMouseEnter={() => setHoveredCard('why-2')}
             >
-              <Award className={`w-16 h-16 mx-auto mb-4 transition-transform duration-300 ${hoveredCard === 'why-2' ? 'scale-125 rotate-12' : ''}`} />
-              <h3 className="text-2xl font-bold mb-4 group-hover:text-yellow-300 transition-colors">Award-Winning Care</h3>
-              <p className="group-hover:text-white transition-colors">Recognized for excellence in patient care and medical innovation</p>
+              <Award
+                className={`w-16 h-16 mx-auto mb-4 transition-transform duration-300 text-pink-300 ${
+                  hoveredCard === 'why-2' ? 'scale-125 rotate-12' : ''
+                }`}
+              />
+              <h3 className="text-2xl font-bold mb-4 group-hover:text-pink-300 transition-colors">
+                Award-Winning Care
+              </h3>
+              <p className="group-hover:text-white transition-colors">
+                Recognized for excellence in patient care and medical innovation
+              </p>
             </div>
-            <div 
-              className="text-center p-8 bg-white bg-opacity-10 rounded-2xl backdrop-blur-lg transform hover:scale-110 hover:bg-opacity-20 transition-all duration-300 cursor-pointer group"
+            <div
+              className="text-center p-8 bg-gradient-to-br from-cyan-500/20 to-blue-500/20 rounded-2xl backdrop-blur-lg transform hover:scale-110 hover:from-cyan-500/30 hover:to-blue-500/30 transition-all duration-300 cursor-pointer group border-2 border-cyan-400/30 hover:border-cyan-400/60"
               onMouseEnter={() => setHoveredCard('why-3')}
             >
-              <Activity className={`w-16 h-16 mx-auto mb-4 transition-transform duration-300 ${hoveredCard === 'why-3' ? 'scale-125 rotate-12' : ''}`} />
-              <h3 className="text-2xl font-bold mb-4 group-hover:text-yellow-300 transition-colors">Advanced Technology</h3>
-              <p className="group-hover:text-white transition-colors">State-of-the-art medical equipment and treatment facilities</p>
+              <Activity
+                className={`w-16 h-16 mx-auto mb-4 transition-transform duration-300 text-cyan-300 ${
+                  hoveredCard === 'why-3' ? 'scale-125 rotate-12' : ''
+                }`}
+              />
+              <h3 className="text-2xl font-bold mb-4 group-hover:text-cyan-300 transition-colors">
+                Advanced Technology
+              </h3>
+              <p className="group-hover:text-white transition-colors">
+                State-of-the-art medical equipment and treatment facilities
+              </p>
             </div>
           </div>
         </div>
@@ -367,9 +712,30 @@ const HospitalManagementSystem = () => {
   );
 
   const renderDoctors = () => (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 py-20" ref={pageRef}>
+    <div
+      className="min-h-screen bg-gradient-to-br from-cyan-50 via-purple-50 via-pink-50 via-rose-50 to-orange-50 py-20 relative overflow-hidden"
+      ref={pageRef}
+    >
+      <div className="absolute inset-0 opacity-10">
+        {[...Array(12)].map((_, i) => (
+          <div
+            key={i}
+            className="absolute rounded-full animate-float"
+            style={{
+              width: Math.random() * 120 + 60 + 'px',
+              height: Math.random() * 120 + 60 + 'px',
+              top: Math.random() * 100 + '%',
+              left: Math.random() * 100 + '%',
+              animationDelay: Math.random() * 5 + 's',
+              background: `linear-gradient(135deg, rgba(59, 130, 246, 0.3), rgba(147, 51, 234, 0.3), rgba(219, 39, 119, 0.3))`,
+            }}
+          ></div>
+        ))}
+      </div>
       <div className="max-w-7xl mx-auto px-4">
-        <h1 className="text-5xl font-bold text-center mb-16 text-gray-800 animate-slide-up">Our Expert Doctors</h1>
+        <h1 className="text-5xl font-bold text-center mb-16 text-gray-800 animate-slide-up">
+          Our Expert Doctors
+        </h1>
         <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
           {doctors.map((doctor, idx) => (
             <div
@@ -377,11 +743,15 @@ const HospitalManagementSystem = () => {
               onMouseEnter={() => setHoveredCard(`doctor-${idx}`)}
               onMouseLeave={() => setHoveredCard(null)}
               onClick={() => setSelectedDoctor(doctor)}
-              className="bg-white rounded-2xl shadow-xl overflow-hidden transform hover:scale-105 hover:shadow-2xl transition-all duration-300 cursor-pointer group"
+              className="bg-gradient-to-br from-white via-blue-50 to-purple-50 rounded-2xl shadow-xl overflow-hidden transform hover:scale-110 hover:shadow-2xl transition-all duration-300 cursor-pointer group border-2 border-transparent hover:border-purple-300"
             >
-              <div className="h-48 bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center text-8xl relative overflow-hidden">
-                <div className={`absolute inset-0 bg-white opacity-0 group-hover:opacity-20 transition-opacity duration-300`}></div>
-                <div className={`transform transition-transform duration-300 ${hoveredCard === `doctor-${idx}` ? 'scale-110 rotate-6' : ''}`}>
+              <div className="h-48 bg-gradient-to-br from-cyan-400 via-blue-500 via-purple-500 to-pink-500 flex items-center justify-center text-8xl relative overflow-hidden animate-gradient">
+                <div className="absolute inset-0 bg-white opacity-0 group-hover:opacity-20 transition-opacity duration-300"></div>
+                <div
+                  className={`transform transition-transform duration-300 ${
+                    hoveredCard === `doctor-${idx}` ? 'scale-110 rotate-6' : ''
+                  }`}
+                >
                   {doctor.image}
                 </div>
                 <div className="absolute top-4 right-4 bg-white bg-opacity-90 rounded-full p-2 shadow-lg">
@@ -389,25 +759,28 @@ const HospitalManagementSystem = () => {
                 </div>
               </div>
               <div className="p-6">
-                <h3 className="text-xl font-bold mb-2 group-hover:text-purple-600 transition-colors">{doctor.name}</h3>
+                <h3 className="text-xl font-bold mb-2 group-hover:text-purple-600 transition-colors">
+                  {doctor.name}
+                </h3>
                 <p className="text-purple-600 font-semibold mb-2">{doctor.specialty}</p>
                 <p className="text-gray-600 text-sm mb-3">Experience: {doctor.experience}</p>
                 <div className="flex items-center mb-4">
                   <Star className="w-5 h-5 text-yellow-400 fill-current animate-pulse" />
                   <span className="ml-2 font-bold">{doctor.rating}</span>
                 </div>
-                <button 
+                <button
                   onClick={(e) => {
                     e.stopPropagation();
                     createRipple(e);
                     setCurrentPage('appointments');
                   }}
-                  className="relative overflow-hidden w-full bg-gradient-to-r from-purple-600 to-blue-600 text-white py-2 rounded-lg hover:shadow-lg transition duration-300 group/btn"
+                  className="relative overflow-hidden w-full bg-gradient-to-r from-purple-600 via-pink-600 to-rose-600 text-white py-2 rounded-lg hover:shadow-lg transition duration-300 group/btn animate-pulse-glow"
                 >
                   <span className="relative z-10 flex items-center justify-center">
-                    Book Appointment <ChevronRight className="ml-2 w-4 h-4 group-hover/btn:translate-x-1 transition-transform" />
+                    Book Appointment{' '}
+                    <ChevronRight className="ml-2 w-4 h-4 group-hover/btn:translate-x-1 transition-transform" />
                   </span>
-                  {ripples.map(ripple => (
+                  {ripples.map((ripple) => (
                     <span
                       key={ripple.id}
                       className="absolute rounded-full bg-white opacity-30 animate-ripple"
@@ -429,10 +802,15 @@ const HospitalManagementSystem = () => {
   );
 
   const renderAppointments = () => (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 to-pink-50 py-20" ref={pageRef}>
+    <div
+      className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-rose-50 py-20"
+      ref={pageRef}
+    >
       <div className="max-w-6xl mx-auto px-4">
-        <h1 className="text-5xl font-bold text-center mb-16 text-gray-800 animate-slide-up">Appointment Management</h1>
-        
+        <h1 className="text-5xl font-bold text-center mb-16 text-gray-800 animate-slide-up">
+          Appointment Management
+        </h1>
+
         {showSuccess && (
           <div className="mb-8 bg-green-500 text-white p-4 rounded-lg flex items-center justify-center animate-slide-up shadow-lg">
             <CheckCircle className="w-6 h-6 mr-2 animate-bounce" />
@@ -441,21 +819,21 @@ const HospitalManagementSystem = () => {
         )}
 
         <div className="grid md:grid-cols-2 gap-8 mb-12">
-          <div className="bg-white rounded-2xl shadow-xl p-8 transform hover:shadow-2xl transition-shadow duration-300">
+          <div className="bg-gradient-to-br from-white via-purple-50 via-pink-50 to-rose-50 rounded-2xl shadow-xl p-8 transform hover:shadow-2xl transition-all duration-300 border-2 border-purple-100 hover:border-purple-300 hover:scale-[1.02]">
             <h2 className="text-2xl font-bold mb-6 text-purple-600 flex items-center">
               <Calendar className="w-6 h-6 mr-2" />
               Book New Appointment
             </h2>
             <div className="space-y-4">
               <div>
-                <input 
-                  type="text" 
-                  placeholder="Patient Name" 
+                <input
+                  type="text"
+                  placeholder="Patient Name"
                   value={formData.name}
                   onChange={(e) => handleInputChange('name', e.target.value)}
-                  className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-purple-600 outline-none transition-all ${
-                    formErrors.name ? 'border-red-500 focus:ring-red-500' : 'border-gray-300'
-                  }`} 
+                  className={`w-full p-3 border-2 rounded-xl focus:ring-2 focus:ring-purple-600 outline-none transition-all bg-gradient-to-r from-white to-purple-50 ${
+                    formErrors.name ? 'border-red-500 focus:ring-red-500' : 'border-purple-200 hover:border-purple-400'
+                  }`}
                 />
                 {formErrors.name && (
                   <p className="text-red-500 text-sm mt-1 flex items-center animate-slide-up">
@@ -465,14 +843,14 @@ const HospitalManagementSystem = () => {
                 )}
               </div>
               <div>
-                <input 
-                  type="email" 
-                  placeholder="Email" 
+                <input
+                  type="email"
+                  placeholder="Email"
                   value={formData.email}
                   onChange={(e) => handleInputChange('email', e.target.value)}
-                  className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-purple-600 outline-none transition-all ${
-                    formErrors.email ? 'border-red-500 focus:ring-red-500' : 'border-gray-300'
-                  }`} 
+                  className={`w-full p-3 border-2 rounded-xl focus:ring-2 focus:ring-purple-600 outline-none transition-all bg-gradient-to-r from-white to-pink-50 ${
+                    formErrors.email ? 'border-red-500 focus:ring-red-500' : 'border-pink-200 hover:border-pink-400'
+                  }`}
                 />
                 {formErrors.email && (
                   <p className="text-red-500 text-sm mt-1 flex items-center animate-slide-up">
@@ -482,15 +860,37 @@ const HospitalManagementSystem = () => {
                 )}
               </div>
               <div>
-                <select 
+                <input
+                  type="tel"
+                  placeholder="Mobile Number (10 digits)"
+                  value={formData.mobile}
+                  onChange={(e) => handleInputChange('mobile', e.target.value.replace(/\D/g, ''))}
+                  maxLength={10}
+                  className={`w-full p-3 border-2 rounded-xl focus:ring-2 focus:ring-purple-600 outline-none transition-all bg-gradient-to-r from-white to-cyan-50 ${
+                    formErrors.mobile ? 'border-red-500 focus:ring-red-500' : 'border-cyan-200 hover:border-cyan-400'
+                  }`}
+                />
+                {formErrors.mobile && (
+                  <p className="text-red-500 text-sm mt-1 flex items-center animate-slide-up">
+                    <XCircle className="w-4 h-4 mr-1" />
+                    {formErrors.mobile}
+                  </p>
+                )}
+              </div>
+              <div>
+                <select
                   value={formData.dept}
                   onChange={(e) => handleInputChange('dept', e.target.value)}
-                  className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-purple-600 outline-none transition-all ${
-                    formErrors.dept ? 'border-red-500 focus:ring-red-500' : 'border-gray-300'
+                  className={`w-full p-3 border-2 rounded-xl focus:ring-2 focus:ring-purple-600 outline-none transition-all bg-gradient-to-r from-purple-50 to-pink-50 ${
+                    formErrors.dept ? 'border-red-500 focus:ring-red-500' : 'border-purple-300 hover:border-purple-500'
                   }`}
                 >
                   <option value="">Select Department</option>
-                  {departments.map((d, i) => <option key={i} value={d.name}>{d.name}</option>)}
+                  {departments.map((d, i) => (
+                    <option key={i} value={d.name}>
+                      {d.name}
+                    </option>
+                  ))}
                 </select>
                 {formErrors.dept && (
                   <p className="text-red-500 text-sm mt-1 flex items-center animate-slide-up">
@@ -499,14 +899,77 @@ const HospitalManagementSystem = () => {
                   </p>
                 )}
               </div>
+
+              {showDoctorSelection && (
+                <div className="animate-bounce-in">
+                  <label className="block text-sm font-semibold text-purple-700 mb-2 flex items-center">
+                    <Stethoscope className="w-4 h-4 mr-2" />
+                    Select Doctor
+                  </label>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-h-64 overflow-y-auto p-2 bg-gradient-to-br from-purple-50 via-pink-50 to-blue-50 rounded-xl border-2 border-purple-200">
+                    {filteredDoctors.map((doctor, idx) => (
+                      <div
+                        key={idx}
+                        onClick={() => {
+                          handleInputChange('doctor', doctor.name);
+                          setSelectedDoctor(doctor);
+                        }}
+                        className={`p-3 rounded-lg cursor-pointer transition-all duration-300 transform hover:scale-105 ${
+                          formData.doctor === doctor.name
+                            ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg animate-pulse-glow'
+                            : 'bg-white hover:bg-gradient-to-r hover:from-purple-100 hover:to-pink-100 border-2 border-purple-200 hover:border-purple-400'
+                        }`}
+                      >
+                        <div className="flex items-center space-x-3">
+                          <div className="text-3xl">{doctor.image}</div>
+                          <div className="flex-1">
+                            <div className="font-semibold text-sm">{doctor.name}</div>
+                            <div
+                              className={`text-xs ${
+                                formData.doctor === doctor.name ? 'text-purple-100' : 'text-purple-600'
+                              }`}
+                            >
+                              {doctor.specialty}
+                            </div>
+                            <div className="flex items-center mt-1">
+                              <Star
+                                className={`w-3 h-3 ${
+                                  formData.doctor === doctor.name ? 'text-yellow-300' : 'text-yellow-400'
+                                } fill-current`}
+                              />
+                              <span
+                                className={`text-xs ml-1 ${
+                                  formData.doctor === doctor.name ? 'text-white' : 'text-gray-600'
+                                }`}
+                              >
+                                {doctor.rating} • {doctor.experience}
+                              </span>
+                            </div>
+                          </div>
+                          {formData.doctor === doctor.name && (
+                            <CheckCircle className="w-5 h-5 text-white animate-bounce" />
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  {formErrors.doctor && (
+                    <p className="text-red-500 text-sm mt-1 flex items-center animate-slide-up">
+                      <XCircle className="w-4 h-4 mr-1" />
+                      {formErrors.doctor}
+                    </p>
+                  )}
+                </div>
+              )}
+
               <div>
-                <input 
-                  type="date" 
+                <input
+                  type="date"
                   value={formData.date}
                   onChange={(e) => handleInputChange('date', e.target.value)}
-                  className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-purple-600 outline-none transition-all ${
-                    formErrors.date ? 'border-red-500 focus:ring-red-500' : 'border-gray-300'
-                  }`} 
+                  className={`w-full p-3 border-2 rounded-xl focus:ring-2 focus:ring-purple-600 outline-none transition-all bg-gradient-to-r from-white to-blue-50 ${
+                    formErrors.date ? 'border-red-500 focus:ring-red-500' : 'border-blue-200 hover:border-blue-400'
+                  }`}
                 />
                 {formErrors.date && (
                   <p className="text-red-500 text-sm mt-1 flex items-center animate-slide-up">
@@ -516,13 +979,13 @@ const HospitalManagementSystem = () => {
                 )}
               </div>
               <div>
-                <input 
-                  type="time" 
+                <input
+                  type="time"
                   value={formData.time}
                   onChange={(e) => handleInputChange('time', e.target.value)}
-                  className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-purple-600 outline-none transition-all ${
-                    formErrors.time ? 'border-red-500 focus:ring-red-500' : 'border-gray-300'
-                  }`} 
+                  className={`w-full p-3 border-2 rounded-xl focus:ring-2 focus:ring-purple-600 outline-none transition-all bg-gradient-to-r from-white to-indigo-50 ${
+                    formErrors.time ? 'border-red-500 focus:ring-red-500' : 'border-indigo-200 hover:border-indigo-400'
+                  }`}
                 />
                 {formErrors.time && (
                   <p className="text-red-500 text-sm mt-1 flex items-center animate-slide-up">
@@ -531,14 +994,15 @@ const HospitalManagementSystem = () => {
                   </p>
                 )}
               </div>
-              <button 
+              <button
                 onClick={handleBookAppointment}
-                className="relative overflow-hidden w-full bg-gradient-to-r from-purple-600 to-pink-600 text-white py-3 rounded-lg font-semibold hover:shadow-lg transform hover:scale-105 transition duration-300 group"
+                className="relative overflow-hidden w-full bg-gradient-to-r from-purple-600 via-pink-600 to-rose-600 text-white py-3 rounded-xl font-semibold hover:shadow-lg transform hover:scale-105 transition duration-300 group animate-pulse-glow"
               >
                 <span className="relative z-10 flex items-center justify-center">
-                  Book Appointment <ChevronRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                  Book Appointment{' '}
+                  <ChevronRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
                 </span>
-                {ripples.map(ripple => (
+                {ripples.map((ripple) => (
                   <span
                     key={ripple.id}
                     className="absolute rounded-full bg-white opacity-30 animate-ripple"
@@ -554,7 +1018,7 @@ const HospitalManagementSystem = () => {
             </div>
           </div>
 
-          <div className="bg-gradient-to-br from-purple-600 to-blue-600 rounded-2xl shadow-xl p-8 text-white">
+          <div className="bg-gradient-to-br from-purple-600 via-pink-600 to-rose-600 rounded-2xl shadow-xl p-8 text-white transform hover:scale-[1.02] transition-all duration-300">
             <h2 className="text-2xl font-bold mb-6">Quick Stats</h2>
             <div className="space-y-6">
               <div className="flex items-center">
@@ -582,6 +1046,7 @@ const HospitalManagementSystem = () => {
           </div>
         </div>
 
+        {/* Today's Appointments Table */}
         <div className="bg-white rounded-2xl shadow-xl p-8 transform hover:shadow-2xl transition-shadow duration-300">
           <h2 className="text-2xl font-bold mb-6 text-gray-800 flex items-center">
             <Clock className="w-6 h-6 mr-2 text-purple-600" />
@@ -600,8 +1065,8 @@ const HospitalManagementSystem = () => {
               </thead>
               <tbody>
                 {appointments.map((apt, idx) => (
-                  <tr 
-                    key={idx} 
+                  <tr
+                    key={idx}
                     className="border-b hover:bg-purple-50 transition-all duration-200 cursor-pointer transform hover:scale-[1.01] group"
                   >
                     <td className="p-4 font-mono group-hover:text-purple-600 transition-colors">{apt.id}</td>
@@ -612,11 +1077,15 @@ const HospitalManagementSystem = () => {
                       {apt.time}
                     </td>
                     <td className="p-4">
-                      <span className={`px-3 py-1 rounded-full text-sm font-semibold transition-all transform group-hover:scale-110 ${
-                        apt.status === 'Confirmed' ? 'bg-green-100 text-green-800 hover:bg-green-200' :
-                        apt.status === 'Pending' ? 'bg-yellow-100 text-yellow-800 hover:bg-yellow-200' :
-                        'bg-gray-100 text-gray-800 hover:bg-gray-200'
-                      }`}>
+                      <span
+                        className={`px-3 py-1 rounded-full text-sm font-semibold transition-all transform group-hover:scale-110 ${
+                          apt.status === 'Confirmed'
+                            ? 'bg-green-100 text-green-800 hover:bg-green-200'
+                            : apt.status === 'Pending'
+                            ? 'bg-yellow-100 text-yellow-800 hover:bg-yellow-200'
+                            : 'bg-gray-100 text-gray-800 hover:bg-gray-200'
+                        }`}
+                      >
                         {apt.status}
                       </span>
                     </td>
@@ -631,10 +1100,13 @@ const HospitalManagementSystem = () => {
   );
 
   const renderContact = () => (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 py-20" ref={pageRef}>
+    <div
+      className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 py-20"
+      ref={pageRef}
+    >
       <div className="max-w-6xl mx-auto px-4">
         <h1 className="text-5xl font-bold text-center mb-16 text-gray-800 animate-slide-up">Contact Us</h1>
-        
+
         {contactSuccess && (
           <div className="mb-8 bg-green-500 text-white p-4 rounded-lg flex items-center justify-center animate-slide-up shadow-lg">
             <CheckCircle className="w-6 h-6 mr-2 animate-bounce" />
@@ -652,30 +1124,48 @@ const HospitalManagementSystem = () => {
               <div className="flex items-start group cursor-pointer hover:bg-purple-50 p-3 rounded-lg transition-all">
                 <MapPin className="w-6 h-6 text-purple-600 mr-4 mt-1 group-hover:scale-110 transition-transform" />
                 <div>
-                  <div className="font-semibold text-lg group-hover:text-purple-600 transition-colors">Address</div>
-                  <div className="text-gray-600">123 Healthcare Avenue, Medical District, New York, NY 10001</div>
+                  <div className="font-semibold text-lg group-hover:text-purple-600 transition-colors">
+                    Address
+                  </div>
+                  <div className="text-gray-600">
+                    123 Healthcare Avenue, Medical District, New York, NY 10001
+                  </div>
                 </div>
               </div>
               <div className="flex items-start group cursor-pointer hover:bg-purple-50 p-3 rounded-lg transition-all">
                 <Phone className="w-6 h-6 text-purple-600 mr-4 mt-1 group-hover:scale-110 transition-transform" />
                 <div>
-                  <div className="font-semibold text-lg group-hover:text-purple-600 transition-colors">Phone</div>
-                  <div className="text-gray-600 hover:text-purple-600 transition-colors">+1 (555) 123-4567</div>
-                  <div className="text-gray-600 hover:text-purple-600 transition-colors">Emergency: +1 (555) 911-0000</div>
+                  <div className="font-semibold text-lg group-hover:text-purple-600 transition-colors">
+                    Phone
+                  </div>
+                  <div className="text-gray-600 hover:text-purple-600 transition-colors">
+                    +1 (555) 123-4567
+                  </div>
+                  <div className="text-gray-600 hover:text-purple-600 transition-colors">
+                    Emergency: +1 (555) 911-0000
+                  </div>
                 </div>
               </div>
               <div className="flex items-start group cursor-pointer hover:bg-purple-50 p-3 rounded-lg transition-all">
                 <Mail className="w-6 h-6 text-purple-600 mr-4 mt-1 group-hover:scale-110 transition-transform" />
                 <div>
-                  <div className="font-semibold text-lg group-hover:text-purple-600 transition-colors">Email</div>
-                  <div className="text-gray-600 hover:text-purple-600 transition-colors">info@medicareplus.com</div>
-                  <div className="text-gray-600 hover:text-purple-600 transition-colors">emergency@medicareplus.com</div>
+                  <div className="font-semibold text-lg group-hover:text-purple-600 transition-colors">
+                    Email
+                  </div>
+                  <div className="text-gray-600 hover:text-purple-600 transition-colors">
+                    info@medicareplus.com
+                  </div>
+                  <div className="text-gray-600 hover:text-purple-600 transition-colors">
+                    emergency@medicareplus.com
+                  </div>
                 </div>
               </div>
               <div className="flex items-start group cursor-pointer hover:bg-purple-50 p-3 rounded-lg transition-all">
                 <Clock className="w-6 h-6 text-purple-600 mr-4 mt-1 group-hover:scale-110 transition-transform" />
                 <div>
-                  <div className="font-semibold text-lg group-hover:text-purple-600 transition-colors">Working Hours</div>
+                  <div className="font-semibold text-lg group-hover:text-purple-600 transition-colors">
+                    Working Hours
+                  </div>
                   <div className="text-gray-600">24/7 Emergency Services</div>
                   <div className="text-gray-600">OPD: 8:00 AM - 8:00 PM</div>
                 </div>
@@ -683,48 +1173,49 @@ const HospitalManagementSystem = () => {
             </div>
           </div>
 
-          <div className="bg-gradient-to-br from-purple-600 to-blue-600 rounded-2xl shadow-xl p-8 text-white transform hover:shadow-2xl transition-all duration-300">
+          <div className="bg-gradient-to-br from-purple-600 via-pink-600 to-rose-600 rounded-2xl shadow-xl p-8 text-white transform hover:shadow-2xl hover:scale-[1.02] transition-all duration-300">
             <h2 className="text-2xl font-bold mb-6 flex items-center">
               <Mail className="w-6 h-6 mr-2" />
               Send us a Message
             </h2>
             <div className="space-y-4">
-              <input 
-                type="text" 
-                placeholder="Your Name" 
+              <input
+                type="text"
+                placeholder="Your Name"
                 value={contactForm.name}
                 onChange={(e) => handleContactChange('name', e.target.value)}
-                className="w-full p-3 rounded-lg text-gray-800 outline-none focus:ring-2 focus:ring-white transition-all" 
+                className="w-full p-3 rounded-lg text-gray-800 outline-none focus:ring-2 focus:ring-white transition-all"
               />
-              <input 
-                type="email" 
-                placeholder="Your Email" 
+              <input
+                type="email"
+                placeholder="Your Email"
                 value={contactForm.email}
                 onChange={(e) => handleContactChange('email', e.target.value)}
-                className="w-full p-3 rounded-lg text-gray-800 outline-none focus:ring-2 focus:ring-white transition-all" 
+                className="w-full p-3 rounded-lg text-gray-800 outline-none focus:ring-2 focus:ring-white transition-all"
               />
-              <input 
-                type="text" 
-                placeholder="Subject" 
+              <input
+                type="text"
+                placeholder="Subject"
                 value={contactForm.subject}
                 onChange={(e) => handleContactChange('subject', e.target.value)}
-                className="w-full p-3 rounded-lg text-gray-800 outline-none focus:ring-2 focus:ring-white transition-all" 
+                className="w-full p-3 rounded-lg text-gray-800 outline-none focus:ring-2 focus:ring-white transition-all"
               />
-              <textarea 
-                placeholder="Your Message" 
-                rows={5} 
+              <textarea
+                placeholder="Your Message"
+                rows={5}
                 value={contactForm.message}
                 onChange={(e) => handleContactChange('message', e.target.value)}
                 className="w-full p-3 rounded-lg text-gray-800 outline-none resize-none focus:ring-2 focus:ring-white transition-all"
               ></textarea>
-              <button 
+              <button
                 onClick={handleContactSubmit}
                 className="relative overflow-hidden w-full bg-white text-purple-600 py-3 rounded-lg font-semibold hover:shadow-lg transform hover:scale-105 transition duration-300 group"
               >
                 <span className="relative z-10 flex items-center justify-center">
-                  Send Message <ChevronRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                  Send Message{' '}
+                  <ChevronRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
                 </span>
-                {ripples.map(ripple => (
+                {ripples.map((ripple) => (
                   <span
                     key={ripple.id}
                     className="absolute rounded-full bg-purple-200 opacity-50 animate-ripple"
@@ -765,6 +1256,29 @@ const HospitalManagementSystem = () => {
             opacity: 0;
           }
         }
+        @keyframes float {
+          0%, 100% { transform: translateY(0px) rotate(0deg); }
+          50% { transform: translateY(-20px) rotate(5deg); }
+        }
+        @keyframes gradient-shift {
+          0% { background-position: 0% 50%; }
+          50% { background-position: 100% 50%; }
+          100% { background-position: 0% 50%; }
+        }
+        @keyframes pulse-glow {
+          0%, 100% { box-shadow: 0 0 20px rgba(147, 51, 234, 0.5); }
+          50% { box-shadow: 0 0 40px rgba(147, 51, 234, 0.8), 0 0 60px rgba(219, 39, 119, 0.5); }
+        }
+        @keyframes shimmer {
+          0% { background-position: -1000px 0; }
+          100% { background-position: 1000px 0; }
+        }
+        @keyframes bounce-in {
+          0% { transform: scale(0.3); opacity: 0; }
+          50% { transform: scale(1.05); }
+          70% { transform: scale(0.9); }
+          100% { transform: scale(1); opacity: 1; }
+        }
         .animate-slide-up {
           animation: slide-up 0.8s ease-out forwards;
           opacity: 0;
@@ -775,18 +1289,42 @@ const HospitalManagementSystem = () => {
         .animate-ripple {
           animation: ripple 0.6s ease-out;
         }
+        .animate-float {
+          animation: float 6s ease-in-out infinite;
+        }
+        .animate-gradient {
+          background-size: 200% 200%;
+          animation: gradient-shift 8s ease infinite;
+        }
+        .animate-pulse-glow {
+          animation: pulse-glow 2s ease-in-out infinite;
+        }
+        .animate-shimmer {
+          background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+          background-size: 1000px 100%;
+          animation: shimmer 3s infinite;
+        }
+        .animate-bounce-in {
+          animation: bounce-in 0.6s ease-out;
+        }
       `}</style>
 
-      <nav className={`fixed w-full z-50 transition-all duration-300 ${scrolled ? 'bg-white shadow-lg' : 'bg-transparent'}`}>
+      <nav
+        className={`fixed w-full z-50 transition-all duration-300 ${
+          scrolled ? 'bg-white shadow-lg' : 'bg-transparent'
+        }`}
+      >
         <div className="max-w-7xl mx-auto px-4">
           <div className="flex justify-between items-center h-20">
             <div className="flex items-center">
               <Heart className={`w-10 h-10 mr-3 ${scrolled ? 'text-purple-600' : 'text-white'}`} />
-              <span className={`text-2xl font-bold ${scrolled ? 'text-gray-800' : 'text-white'}`}>MediCare Plus</span>
+              <span className={`text-2xl font-bold ${scrolled ? 'text-gray-800' : 'text-white'}`}>
+                MediCare Plus
+              </span>
             </div>
-            
+
             <div className="hidden md:flex space-x-8">
-              {['home', 'doctors', 'appointments', 'contact'].map(page => (
+              {['home', 'doctors', 'appointments', 'contact'].map((page) => (
                 <button
                   key={page}
                   onClick={(e) => {
@@ -803,20 +1341,24 @@ const HospitalManagementSystem = () => {
             </div>
 
             <button className="md:hidden" onClick={() => setMenuOpen(!menuOpen)}>
-              {menuOpen ? <X className={scrolled ? 'text-gray-800' : 'text-white'} /> : <Menu className={scrolled ? 'text-gray-800' : 'text-white'} />}
+              {menuOpen ? (
+                <X className={scrolled ? 'text-gray-800' : 'text-white'} />
+              ) : (
+                <Menu className={scrolled ? 'text-gray-800' : 'text-white'} />
+              )}
             </button>
           </div>
         </div>
 
         {menuOpen && (
           <div className="md:hidden bg-white shadow-lg animate-slide-up">
-            {['home', 'doctors', 'appointments', 'contact'].map(page => (
+            {['home', 'doctors', 'appointments', 'contact'].map((page) => (
               <button
                 key={page}
-                onClick={(e) => { 
+                onClick={(e) => {
                   createRipple(e);
-                  setCurrentPage(page); 
-                  setMenuOpen(false); 
+                  setCurrentPage(page);
+                  setMenuOpen(false);
                 }}
                 className="relative overflow-hidden block w-full text-left px-4 py-3 text-gray-700 hover:bg-purple-50 capitalize font-semibold transition-all transform hover:translate-x-2"
               >
@@ -834,19 +1376,21 @@ const HospitalManagementSystem = () => {
 
       {/* Department Modal */}
       {selectedDept && (
-        <div 
+        <div
           className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 animate-fade-in"
           onClick={() => setSelectedDept(null)}
         >
-          <div 
+          <div
             className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full p-8 transform hover:scale-105 transition-transform animate-slide-up"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex justify-between items-start mb-6">
-              <div className={`h-20 w-20 bg-gradient-to-br ${selectedDept.color} rounded-xl flex items-center justify-center`}>
+              <div
+                className={`h-20 w-20 bg-gradient-to-br ${selectedDept.color} rounded-xl flex items-center justify-center`}
+              >
                 <selectedDept.icon className="w-12 h-12 text-white" />
               </div>
-              <button 
+              <button
                 onClick={() => setSelectedDept(null)}
                 className="text-gray-400 hover:text-gray-600 transition-colors"
               >
@@ -872,7 +1416,7 @@ const HospitalManagementSystem = () => {
               </h3>
               <p className="text-gray-600">{selectedDept.equipment}</p>
             </div>
-            <button 
+            <button
               onClick={(e) => {
                 createRipple(e);
                 setSelectedDept(null);
@@ -881,7 +1425,7 @@ const HospitalManagementSystem = () => {
               className="w-full bg-gradient-to-r from-purple-600 to-blue-600 text-white py-3 rounded-lg font-semibold hover:shadow-lg transform hover:scale-105 transition duration-300 relative overflow-hidden"
             >
               <span className="relative z-10">Book Appointment</span>
-              {ripples.map(ripple => (
+              {ripples.map((ripple) => (
                 <span
                   key={ripple.id}
                   className="absolute rounded-full bg-white opacity-30 animate-ripple"
@@ -900,11 +1444,11 @@ const HospitalManagementSystem = () => {
 
       {/* Doctor Modal */}
       {selectedDoctor && (
-        <div 
+        <div
           className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 animate-fade-in"
           onClick={() => setSelectedDoctor(null)}
         >
-          <div 
+          <div
             className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-8 transform hover:scale-105 transition-transform animate-slide-up"
             onClick={(e) => e.stopPropagation()}
           >
@@ -912,7 +1456,7 @@ const HospitalManagementSystem = () => {
               <div className="h-24 w-24 bg-gradient-to-br from-blue-400 to-purple-500 rounded-full flex items-center justify-center text-6xl">
                 {selectedDoctor.image}
               </div>
-              <button 
+              <button
                 onClick={() => setSelectedDoctor(null)}
                 className="text-gray-400 hover:text-gray-600 transition-colors"
               >
@@ -932,7 +1476,7 @@ const HospitalManagementSystem = () => {
                 <span>Experience: {selectedDoctor.experience}</span>
               </div>
             </div>
-            <button 
+            <button
               onClick={(e) => {
                 createRipple(e);
                 setSelectedDoctor(null);
@@ -943,7 +1487,7 @@ const HospitalManagementSystem = () => {
               <span className="relative z-10 flex items-center justify-center">
                 Book Appointment <ChevronRight className="ml-2 w-5 h-5" />
               </span>
-              {ripples.map(ripple => (
+              {ripples.map((ripple) => (
                 <span
                   key={ripple.id}
                   className="absolute rounded-full bg-white opacity-30 animate-ripple"
@@ -968,40 +1512,58 @@ const HospitalManagementSystem = () => {
                 <Heart className="w-8 h-8 mr-2" />
                 <span className="text-xl font-bold">MediCare Plus</span>
               </div>
-              <p className="text-gray-400">Providing exceptional healthcare services with compassion and excellence.</p>
+              <p className="text-gray-400">
+                Providing exceptional healthcare services with compassion and excellence.
+              </p>
             </div>
             <div>
               <h3 className="text-lg font-bold mb-4">Quick Links</h3>
               <div className="space-y-2">
-                <div className="text-gray-400 hover:text-white cursor-pointer transform hover:translate-x-2 transition-all duration-300">About Us</div>
-                <div className="text-gray-400 hover:text-white cursor-pointer transform hover:translate-x-2 transition-all duration-300">Services</div>
-                <div className="text-gray-400 hover:text-white cursor-pointer transform hover:translate-x-2 transition-all duration-300">Careers</div>
-                <div className="text-gray-400 hover:text-white cursor-pointer transform hover:translate-x-2 transition-all duration-300">News</div>
+                <div className="text-gray-400 hover:text-white cursor-pointer transform hover:translate-x-2 transition-all duration-300">
+                  About Us
+                </div>
+                <div className="text-gray-400 hover:text-white cursor-pointer transform hover:translate-x-2 transition-all duration-300">
+                  Services
+                </div>
+                <div className="text-gray-400 hover:text-white cursor-pointer transform hover:translate-x-2 transition-all duration-300">
+                  Careers
+                </div>
+                <div className="text-gray-400 hover:text-white cursor-pointer transform hover:translate-x-2 transition-all duration-300">
+                  News
+                </div>
               </div>
             </div>
             <div>
               <h3 className="text-lg font-bold mb-4">Services</h3>
               <div className="space-y-2">
-                <div className="text-gray-400 hover:text-white cursor-pointer transform hover:translate-x-2 transition-all duration-300">Emergency Care</div>
-                <div className="text-gray-400 hover:text-white cursor-pointer transform hover:translate-x-2 transition-all duration-300">Surgery</div>
-                <div className="text-gray-400 hover:text-white cursor-pointer transform hover:translate-x-2 transition-all duration-300">Diagnostics</div>
-                <div className="text-gray-400 hover:text-white cursor-pointer transform hover:translate-x-2 transition-all duration-300">Pharmacy</div>
+                <div className="text-gray-400 hover:text-white cursor-pointer transform hover:translate-x-2 transition-all duration-300">
+                  Emergency Care
+                </div>
+                <div className="text-gray-400 hover:text-white cursor-pointer transform hover:translate-x-2 transition-all duration-300">
+                  Surgery
+                </div>
+                <div className="text-gray-400 hover:text-white cursor-pointer transform hover:translate-x-2 transition-all duration-300">
+                  Diagnostics
+                </div>
+                <div className="text-gray-400 hover:text-white cursor-pointer transform hover:translate-x-2 transition-all duration-300">
+                  Pharmacy
+                </div>
               </div>
             </div>
             <div>
               <h3 className="text-lg font-bold mb-4">Newsletter</h3>
               <p className="text-gray-400 mb-4">Subscribe for health tips and updates</p>
-              <input 
-                type="email" 
-                placeholder="Your email" 
-                className="w-full p-2 rounded bg-gray-800 text-white outline-none mb-2 focus:ring-2 focus:ring-purple-600 transition-all" 
+              <input
+                type="email"
+                placeholder="Your email"
+                className="w-full p-2 rounded bg-gray-800 text-white outline-none mb-2 focus:ring-2 focus:ring-purple-600 transition-all"
               />
-              <button 
+              <button
                 onClick={(e) => createRipple(e)}
                 className="relative overflow-hidden w-full bg-purple-600 py-2 rounded hover:bg-purple-700 transition duration-300 transform hover:scale-105"
               >
                 <span className="relative z-10">Subscribe</span>
-                {ripples.map(ripple => (
+                {ripples.map((ripple) => (
                   <span
                     key={ripple.id}
                     className="absolute rounded-full bg-white opacity-30 animate-ripple"
